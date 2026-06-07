@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Leaf } from "lucide-react";
-import { HashRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 
 // ─── TIPOS ───
 // Salimos de 'app' con '../' para llegar a la carpeta 'types'
@@ -48,14 +47,14 @@ function MainApp({ screen, onNavigate, selectedRecipe }: {
 
 const MAIN_SCREENS: Screen[] = ["home", "planner", "recipes", "shopping", "profile", "health"];
 
-// ─── CONTENIDO DE LA APP CON ENRUTAMIENTO ──────────────────────────────────────
-function AppContent() {
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [screen, setScreen] = useState<Screen>("splash");
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const navigate = useNavigate();
 
-  const handleNavigate = (to: Screen, data?: { recipe?: Recipe }) => {
+  const navigate = (to: Screen, data?: { recipe?: Recipe }) => {
     if (data?.recipe) setSelectedRecipe(data.recipe);
-    navigate(`/${to}`);
+    setScreen(to);
   };
 
   return (
@@ -88,32 +87,44 @@ function AppContent() {
         <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-24 h-6 bg-slate-900 rounded-full z-50" />
         {/* Screen content */}
         <div className="absolute inset-[10px] rounded-[38px] overflow-hidden bg-white">
-          <Routes>
-            <Route path="/" element={<Navigate to="/splash" replace />} />
-            <Route path="/splash" element={<SplashScreen onNavigate={handleNavigate} />} />
-            <Route path="/auth" element={<AuthScreen onNavigate={handleNavigate} />} />
-            <Route path="/onboarding" element={<OnboardingScreen onNavigate={handleNavigate} />} />
-            {MAIN_SCREENS.map(s => (
-              <Route key={s} path={`/${s}`} element={<MainApp screen={s} onNavigate={handleNavigate} selectedRecipe={selectedRecipe} />} />
-            ))}
-            <Route path="/recipeDetail" element={selectedRecipe ? <RecipeDetailScreen recipe={selectedRecipe} onNavigate={handleNavigate} /> : <Navigate to="/recipes" replace />} />
-            <Route path="/stats" element={<StatsScreen onNavigate={handleNavigate} />} />
-            <Route path="/settings" element={<SettingsScreen onNavigate={handleNavigate} />} />
-            <Route path="/editProfile" element={<EditProfileScreen onNavigate={handleNavigate} />} />
-            <Route path="/myObjetives" element={<MyObjetivesScreen onNavigate={handleNavigate} />} />
-            <Route path="*" element={<Navigate to="/splash" replace />} />
-          </Routes>
+          {screen === "splash"      && <SplashScreen onNavigate={(s) => navigate(s)} />}
+          {screen === "auth"        && <AuthScreen onNavigate={(s) => navigate(s)} />}
+          {screen === "onboarding"  && <OnboardingScreen onNavigate={(s) => navigate(s)} />}
+          {MAIN_SCREENS.includes(screen) && <MainApp screen={screen} onNavigate={navigate} selectedRecipe={selectedRecipe} />}
+          {screen === "recipeDetail" && selectedRecipe && <RecipeDetailScreen recipe={selectedRecipe} onNavigate={navigate} />}
+          {screen === "stats"       && <StatsScreen onNavigate={(s) => navigate(s)} />}
+          {screen === "settings"    && <SettingsScreen onNavigate={(s) => navigate(s)} />}
+          {screen === "editProfile" && <EditProfileScreen onNavigate={(s) => navigate(s as Screen)} />}
+          {screen === "myObjetives" && <MyObjetivesScreen onNavigate={(s) => navigate(s as Screen)} />}
         </div>
       </div>
-    </div>
-  );
-}
 
-// ─── ROOT ─────────────────────────────────────────────────────────────────────
-export default function App() {
-  return (
-    <HashRouter>
-      <AppContent />
-    </HashRouter>
+      {/* Navigation hints below */}
+      <div className="relative z-10 mt-6 flex gap-4 flex-wrap justify-center">
+        {([
+          ["splash", "Splash"],
+          ["auth", "Login"],
+          ["onboarding", "Onboarding"],
+          ["home", "Dashboard"],
+          ["planner", "Plan"],
+          ["recipes", "Recetas"],
+          ["shopping", "Compras"],
+          ["profile", "Perfil"],
+          ["stats", "Progreso"],
+          ["health", "Salud"],
+          ["settings", "Ajustes"],
+          ["editProfile", "Editar Perfil"],
+          ["myObjetives", "Objetivos"]
+        ] as [Screen, string][]).map(([s, l]) => (
+          <button key={s} onClick={() => setScreen(s)}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${screen === s ? "bg-emerald-500 text-white" : "bg-white/10 text-white/60 hover:bg-white/20"}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+      <p className="relative z-10 mt-3 text-white/25 text-[11px] font-medium">
+        Haz clic en los botones para navegar entre pantallas
+      </p>
+    </div>
   );
 }
