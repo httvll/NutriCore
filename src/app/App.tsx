@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Leaf } from "lucide-react";
-import { HashRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 
 // ─── TIPOS ───
 // Salimos de 'app' con '../' para llegar a la carpeta 'types'
@@ -52,10 +52,6 @@ const MAIN_SCREENS: Screen[] = ["home", "planner", "recipes", "shopping", "profi
 function AppContent() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Obtenemos la pantalla actual basada en la URL (por defecto "splash")
-  const screen = (location.pathname.replace("/", "") || "splash") as Screen;
 
   const handleNavigate = (to: Screen, data?: { recipe?: Recipe }) => {
     if (data?.recipe) setSelectedRecipe(data.recipe);
