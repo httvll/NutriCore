@@ -32,6 +32,21 @@ export interface Database {
         Insert: Omit<NutritionistNote, "id" | "created_at">;
         Update: Partial<Omit<NutritionistNote, "id" | "created_at">>;
       };
+      recipes: {
+        Row: RecipeRecord;
+        Insert: Omit<RecipeRecord, "id" | "created_at">;
+        Update: Partial<Omit<RecipeRecord, "id" | "created_at">>;
+      };
+      lab_results: {
+        Row: LabResultRecord;
+        Insert: Omit<LabResultRecord, "id" | "created_at">;
+        Update: Partial<Omit<LabResultRecord, "id" | "created_at">>;
+      };
+      weight_logs: {
+        Row: WeightLogRecord;
+        Insert: Omit<WeightLogRecord, "id" | "created_at">;
+        Update: Partial<Omit<WeightLogRecord, "id" | "created_at">>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -67,6 +82,7 @@ export interface UserProfile {
   carbs_goal_g: number | null;
   fat_goal_g: number | null;
   streak_days: number;
+  avatar_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -100,5 +116,40 @@ export interface NutritionistNote {
   note_text: string;
   author_name: string;
   note_date: string;
+  created_at: string;
+}
+
+export interface RecipeRecord {
+  id: number;
+  name: string;
+  category: string;
+  emoji: string;
+  color: string;
+  calories: number;
+  time_min: number;      // Ej: 25 (en lugar del string "25 min" para mejor consulta)
+  rating: number;
+  difficulty: string;
+  macros: Json;          // { protein, carbs, fat }
+  tags: string[];
+  ingredients: string[];
+  instructions: string;
+  created_at: string;
+}
+
+export interface LabResultRecord {
+  id: string;
+  user_id: string;
+  exam_date: string;
+  exam_type: string;     // Ej: "Perfil lipídico", "Glicemia"
+  file_url: string | null;
+  values_data: Json;     // Array de resultados { name, value, unit, refMin, refMax }
+  created_at: string;
+}
+
+export interface WeightLogRecord {
+  id: string;
+  user_id: string;
+  weight_kg: number;
+  logged_date: string;
   created_at: string;
 }
