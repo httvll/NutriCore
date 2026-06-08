@@ -1,12 +1,10 @@
 import { ArrowLeft, Activity, ChefHat, ShieldCheck, Users, Mail } from "lucide-react";
-import StatusBar from "../components/StatusBar";
 import { Screen } from "../../types";
 
 export default function AboutScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   return (
     <div className="h-full overflow-y-auto bg-slate-50 flex flex-col" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-4 shadow-sm sticky top-0 z-10">
-        <StatusBar />
         <div className="flex items-center gap-3 px-5 mt-1">
           <button onClick={() => onNavigate("settings" as Screen)} className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center active:scale-95 transition-transform">
             <ArrowLeft size={18} className="text-slate-600" />

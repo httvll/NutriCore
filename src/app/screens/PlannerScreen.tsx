@@ -4,7 +4,6 @@ import { Screen } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import type { RecipeRecord } from "../../lib/database.types";
-import StatusBar from "../components/StatusBar";
 import { useWeeklyPlan } from "./useWeeklyPlan";
 
 const SLOT_INFO: Record<string, { emoji: string; time: string; type: string }> = {
@@ -91,7 +90,6 @@ export default function PlannerScreen({ onNavigate }: { onNavigate: (s: Screen) 
   return (
     <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-4 shadow-sm">
-        <StatusBar />
         <div className="px-5 mt-1">
           <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-extrabold text-slate-900">Plan semanal</h2>

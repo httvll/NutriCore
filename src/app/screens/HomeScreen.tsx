@@ -6,7 +6,6 @@ import { Screen } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import type { MealLog } from "../../lib/database.types";
-import StatusBar from "../components/StatusBar";
 
 const SLOT_INFO: Record<string, { emoji: string; time: string; type: string }> = {
   desayuno: { emoji: "☀️", time: "08:00", type: "Desayuno" },
@@ -80,7 +79,6 @@ export default function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => 
     <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       {/* Header */}
       <div className="bg-white pt-2 pb-5 shadow-sm">
-        <StatusBar />
         <div className="px-5 mt-1">
           <div className="flex justify-between items-center mb-4">
           <div>

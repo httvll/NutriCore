@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import StatusBar from "../components/StatusBar";
 import type { Screen } from "../../types";
 import type { Database } from "../../lib/database.types";
 
@@ -98,7 +97,6 @@ export default function MyObjetivesScreen({ onNavigate }: { onNavigate: (s: Scre
   return (
     <div className="h-full overflow-y-auto bg-slate-50 flex flex-col" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-4 shadow-sm sticky top-0 z-10">
-        <StatusBar />
         <div className="flex items-center justify-between px-5 mt-1">
           <div className="flex items-center gap-3">
             <button onClick={() => onNavigate("settings" as Screen)} className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center">

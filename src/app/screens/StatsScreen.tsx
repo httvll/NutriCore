@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Plus } from "lucide-react";
-import StatusBar from "../components/StatusBar";
 import { BarChart, Bar, XAxis, YAxis, Cell, ReferenceLine, ResponsiveContainer, LineChart, Line } from "recharts";  
 import { Screen } from "../../types";
 import { useAuth } from "../../context/AuthContext";
@@ -100,7 +99,6 @@ export default function StatsScreen({ onNavigate }: { onNavigate: (s: Screen) =>
   return (
     <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-4 shadow-sm">
-        <StatusBar />
         <div className="flex items-center gap-3 mb-1 px-5 mt-1">
           <button onClick={() => onNavigate("home")} className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center">
             <ArrowLeft size={18} className="text-slate-600" />

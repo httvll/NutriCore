@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Search, Star, Clock } from "lucide-react";
 import { Screen, Recipe } from "../../types";
 import { supabase } from "../../lib/supabase";
-import StatusBar from "../components/StatusBar";
 
 export default function RecipesScreen({ onNavigate, onSelectRecipe }: { onNavigate: (s: Screen) => void, onSelectRecipe: (r: Recipe) => void }) {
   const [search, setSearch] = useState("");
@@ -44,7 +43,6 @@ export default function RecipesScreen({ onNavigate, onSelectRecipe }: { onNaviga
   return (
     <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-4 shadow-sm">
-        <StatusBar />
         <div className="px-5 mt-1">
           <h2 className="text-xl font-extrabold text-slate-900 mb-3">Recetas</h2>
           <div className="flex items-center gap-2 bg-slate-100 rounded-2xl px-4 py-3 mb-3">

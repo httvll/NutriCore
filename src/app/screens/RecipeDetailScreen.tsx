@@ -1,5 +1,4 @@
 import { useState } from "react";
-import StatusBar from "../components/StatusBar";
 import { ArrowLeft, Star } from "lucide-react";
 import { Recipe } from "../../types";
 import { Screen } from "../../types";
@@ -54,7 +53,6 @@ export default function RecipeDetailScreen({ recipe, onNavigate }: { recipe: Rec
   return (
     <div className="h-full overflow-y-auto bg-white" style={{ scrollbarWidth: "none" }}>
       <div className="relative h-56 flex flex-col" style={{ background: `linear-gradient(160deg, ${recipe.color}40, ${recipe.color}15)` }}>
-        <div className="absolute inset-x-0 top-0"><StatusBar /></div>
         <div className="absolute inset-x-0 top-12 flex justify-between px-5">
           <button onClick={() => onNavigate("recipes")} className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-sm">
             <ArrowLeft size={18} className="text-slate-700" />

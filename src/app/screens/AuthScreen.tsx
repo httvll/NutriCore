@@ -11,17 +11,6 @@ interface Props {
   onNavigate: (s: Screen) => void;
 }
 
-function StatusBar() {
-  return (
-    <div className="flex justify-between items-center px-5 pt-3 pb-1 text-[11px] font-semibold text-slate-700">
-      <span>9:41</span>
-      <div className="flex items-center gap-1">
-        <span>●●●</span><span>WiFi</span><span>▮▮▮</span>
-      </div>
-    </div>
-  );
-}
-
 export default function AuthScreen({ onNavigate }: Props) {
   // useAuth() viene de AuthContext.tsx — ya envuelto en main.tsx
   const { signIn, signUp } = useAuth();
@@ -80,7 +69,6 @@ export default function AuthScreen({ onNavigate }: Props) {
 
   return (
     <div className="h-full bg-white flex flex-col overflow-y-auto" style={{ scrollbarWidth: "none" }}>
-      <StatusBar />
 
       {/* Header */}
       <div className="px-6 pt-6 pb-5 text-center">

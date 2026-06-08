@@ -1,11 +1,9 @@
 import { Leaf } from "lucide-react";
 import { Screen } from "../../types"; 
-import StatusBar from "../components/StatusBar";
 
 export default function SplashScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   return (
     <div className="h-full flex flex-col" style={{ background: "linear-gradient(160deg,#064E3B 0%,#065F46 45%,#059669 85%,#34D399 100%)" }}>
-      <StatusBar light />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="w-72 h-72 rounded-full border border-white/10 absolute -top-20 -right-20" />
         <div className="w-48 h-48 rounded-full border border-white/10 absolute -top-4 -right-4" />

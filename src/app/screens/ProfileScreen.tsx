@@ -7,7 +7,6 @@ import {
 import { MacroBar } from "../components/MacroBar";
 import { useAuth, type NutritionistNote } from "../../context/AuthContext";
 import type { Screen } from "../../types";
-import StatusBar from "../components/StatusBar";
 import { supabase } from "../../lib/supabase";
 
 export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
@@ -134,7 +133,6 @@ export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) 
 
         {/* Header */}
         <div className="bg-white pt-2 pb-6 shadow-sm">
-          <StatusBar />
           <div className="px-5 mt-1">
             <div className="mb-5">
             <h2 className="text-xl font-extrabold text-slate-900">Mi perfil</h2>

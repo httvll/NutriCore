@@ -3,7 +3,6 @@ import { Check, ShoppingBag } from "lucide-react";
 import { Screen } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
-import StatusBar from "../components/StatusBar";
 
 type ShoppingItem = { name: string; qty: string; checked: boolean; rawName: string };
 type ShoppingCategory = { category: string; color: string; icon: string; items: ShoppingItem[] };
@@ -117,7 +116,6 @@ export default function ShoppingScreen({ onNavigate }: { onNavigate: (s: Screen)
   return (
     <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-5 shadow-sm">
-        <StatusBar />
         <div className="px-5 mt-1">
           <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-extrabold text-slate-900">Lista de compras</h2>

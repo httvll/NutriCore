@@ -8,7 +8,6 @@ import { labStatus } from "../../lib/utils";
 
 // ─── IMPORTA TUS COMPONENTES UI ──────────────────────────────────────────────
 import Sparkline from "../components/Sparkline";
-import StatusBar from "../components/StatusBar";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
@@ -277,7 +276,6 @@ export default function HealthScreen({ onNavigate }: { onNavigate: (s: Screen) =
 
       {/* Header */}
       <div className="bg-white pt-2 pb-4 shadow-sm">
-        <StatusBar />
         <div className="px-5 mt-1">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-3">
@@ -654,7 +652,6 @@ function LabDetailScreen({ result, trends, onBack }: { result: LabResult; trends
   return (
     <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-4 shadow-sm">
-        <StatusBar />
         <div className="flex items-center gap-3 mb-1 px-5 mt-1">
           <button onClick={onBack} className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center">
             <ArrowLeft size={18} className="text-slate-600" />
