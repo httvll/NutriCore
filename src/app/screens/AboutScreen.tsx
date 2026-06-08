@@ -69,9 +69,14 @@ export default function AboutScreen({ onNavigate }: { onNavigate: (s: Screen) =>
           </div>
           <p className="text-sm text-slate-600 leading-relaxed mb-4">
             Somos un equipo interdisciplinario comprometido con tu salud. En NutriCore trabajamos para entregarte soluciones tecnológicas de vanguardia, siempre respaldadas por la precisión médica. Nuestro objetivo es simplificar tu día a día a través de una plataforma confiable que potencie tu cuidado.          </p>
-          <a href="mailto:nutricoreapp@gmail.com" className="block text-center w-full py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-bold text-sm active:scale-95 transition-transform">
+         <a 
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=nutricoreapp@gmail.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block text-center w-full py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-bold text-sm active:scale-95 transition-transform"
+            >
             ✉️ nutricoreapp@gmail.com
-          </a>
+            </a>
         </div>
       </div>
     </div>
