@@ -20,16 +20,6 @@ type DietGoal     = Database["public"]["Enums"]["diet_goal"];
 // Opciones de edad 10–100
 const AGE_OPTIONS = Array.from({ length: 91 }, (_, i) => i + 10);
 
-function StatusBar() {
-  return (
-    <div className="flex justify-between items-center px-5 pt-3 pb-1 text-[11px] font-semibold text-slate-700">
-      <span>9:41</span>
-      <div className="flex items-center gap-1">
-        <span>●●●</span><span>WiFi</span><span>▮▮▮</span>
-      </div>
-    </div>
-  );
-}
 
 // ─── Calculo calórico (Mifflin-St Jeor) ──────────────────────────────────────
 const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {
@@ -449,8 +439,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
   const isLastStep = step === totalSteps - 1;
 
   return (
-    <div className="h-full bg-white flex flex-col overflow-hidden">
-      <StatusBar />
+    <div className="flex flex-col h-screen">
       <div className="px-6 pt-2 pb-4 flex flex-col flex-1 min-h-0">
 
         {/* Barra de progreso */}
