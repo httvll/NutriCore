@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HashRouter, Routes, Route, useNavigate, Navigate, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { Screen, Recipe } from "../types";
 import BottomNav from "./components/BottomNav";
 import SplashScreen from "./screens/SplashScreen";
@@ -42,11 +42,7 @@ const MAIN_SCREENS: Screen[] = ["home", "planner", "recipes", "shopping", "profi
 function AppContent() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { loading } = useAuth();
-
-  // Extraemos la pantalla actual de la URL
-  const screen = (location.pathname.replace("/", "") || "splash") as Screen;
+  const { user, loading } = useAuth();
 
   const handleNavigate = (to: Screen, data?: { recipe?: Recipe }) => {
     if (data?.recipe) setSelectedRecipe(data.recipe);
@@ -66,20 +62,23 @@ function AppContent() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-white">
       <Routes>
-        <Route path="/" element={<Navigate to="/splash" replace />} />
-        <Route path="/splash" element={<SplashScreen onNavigate={handleNavigate} />} />
-        <Route path="/auth" element={<AuthScreen onNavigate={handleNavigate} />} />
-        <Route path="/onboarding" element={<OnboardingScreen onNavigate={handleNavigate} />} />
+        {/* Rutas Públicas: Si ya hay usuario logueado, lo forzamos a ir al Home */}
+        <Route path="/" element={<Navigate to={user ? "/home" : "/splash"} replace />} />
+        <Route path="/splash" element={user ? <Navigate to="/home" replace /> : <SplashScreen onNavigate={handleNavigate} />} />
+        <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <AuthScreen onNavigate={handleNavigate} />} />
+        
+        {/* Rutas Privadas: Si NO hay usuario, lo devolvemos al Splash */}
+        <Route path="/onboarding" element={!user ? <Navigate to="/splash" replace /> : <OnboardingScreen onNavigate={handleNavigate} />} />
         {MAIN_SCREENS.map(s => (
-          <Route key={s} path={`/${s}`} element={<MainApp screen={s as Screen} onNavigate={handleNavigate} selectedRecipe={selectedRecipe} />} />
+          <Route key={s} path={`/${s}`} element={!user ? <Navigate to="/splash" replace /> : <MainApp screen={s as Screen} onNavigate={handleNavigate} selectedRecipe={selectedRecipe} />} />
         ))}
-        <Route path="/recipeDetail" element={selectedRecipe ? <RecipeDetailScreen recipe={selectedRecipe} onNavigate={handleNavigate} /> : <Navigate to="/recipes" replace />} />
-        <Route path="/stats" element={<StatsScreen onNavigate={handleNavigate} />} />
-        <Route path="/settings" element={<SettingsScreen onNavigate={handleNavigate} />} />
-        <Route path="/editProfile" element={<EditProfileScreen onNavigate={handleNavigate} />} />
-        <Route path="/myObjetives" element={<MyObjetivesScreen onNavigate={handleNavigate} />} />
+        <Route path="/recipeDetail" element={!user ? <Navigate to="/splash" replace /> : (selectedRecipe ? <RecipeDetailScreen recipe={selectedRecipe} onNavigate={handleNavigate} /> : <Navigate to="/recipes" replace />)} />
+        <Route path="/stats" element={!user ? <Navigate to="/splash" replace /> : <StatsScreen onNavigate={handleNavigate} />} />
+        <Route path="/settings" element={!user ? <Navigate to="/splash" replace /> : <SettingsScreen onNavigate={handleNavigate} />} />
+        <Route path="/editProfile" element={!user ? <Navigate to="/splash" replace /> : <EditProfileScreen onNavigate={handleNavigate} />} />
+        <Route path="/myObjetives" element={!user ? <Navigate to="/splash" replace /> : <MyObjetivesScreen onNavigate={handleNavigate} />} />
         <Route path="/about" element={<AboutScreen onNavigate={handleNavigate} />} />
-        <Route path="*" element={<Navigate to="/splash" replace />} />
+        <Route path="*" element={<Navigate to={user ? "/home" : "/splash"} replace />} />
       </Routes>
     </div>
   );
