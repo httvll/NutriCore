@@ -13,7 +13,7 @@ import BottomNav from "./components/BottomNav";
 // Entramos directo a 'screens' porque ya estamos en 'app'
 import SplashScreen from "./screens/SplashScreen";
 import AuthScreen from "./screens/AuthScreen";
-import OnboardingScreen from "./screens/Onboardingscreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
 import HomeScreen from "./screens/HomeScreen";
 import PlannerScreen from "./screens/PlannerScreen";
 import RecipesScreen from "./screens/RecipesScreen";
