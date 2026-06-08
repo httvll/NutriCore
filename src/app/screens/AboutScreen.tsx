@@ -16,9 +16,6 @@ export default function AboutScreen({ onNavigate }: { onNavigate: (s: Screen) =>
       </div>
 
       <div className="px-5 pt-5 pb-8 space-y-4">
-        <p className="text-sm text-slate-600 leading-relaxed mb-2">
-          Conoce más sobre cómo construimos tu experiencia nutricional y los principios que guían nuestra plataforma.
-        </p>
 
         {/* Metodología Nutricional */}
         <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100">
