@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Leaf } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 
 // ─── TIPOS ───
 // Salimos de 'app' con '../' para llegar a la carpeta 'types'
@@ -60,6 +61,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6"
       style={{ background: "linear-gradient(135deg,#0F172A 0%,#082f1e 50%,#0F172A 100%)" }}>
+      <Analytics />
       {/* Ambient circles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute w-96 h-96 rounded-full opacity-20" style={{ background: "radial-gradient(circle,#059669,transparent)", top: "10%", left: "5%" }} />
