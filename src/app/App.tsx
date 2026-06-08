@@ -42,15 +42,15 @@ const MAIN_SCREENS: Screen[] = ["home", "planner", "recipes", "shopping", "profi
 function AppContent() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, profile, loading, profileLoading } = useAuth();
 
   const handleNavigate = (to: Screen, data?: { recipe?: Recipe }) => {
     if (data?.recipe) setSelectedRecipe(data.recipe);
     navigate(`/${to}`);
   };
 
-  // Pantalla de carga mientras Supabase restaura la sesión (evita parpadeos al dar Refresh)
-  if (loading) {
+  // Pantalla de carga mientras Supabase restaura la sesión o carga el perfil
+  if (loading || (user && profileLoading)) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
@@ -59,26 +59,30 @@ function AppContent() {
     );
   }
 
+  // Verificamos si el usuario ya completó el onboarding (tiene una meta)
+  const hasCompletedOnboarding = !!profile?.goal;
+  const defaultLoggedInRoute = hasCompletedOnboarding ? "/home" : "/onboarding";
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-white">
       <Routes>
-        {/* Rutas Públicas: Si ya hay usuario logueado, lo forzamos a ir al Home */}
-        <Route path="/" element={<Navigate to={user ? "/home" : "/splash"} replace />} />
-        <Route path="/splash" element={user ? <Navigate to="/home" replace /> : <SplashScreen onNavigate={handleNavigate} />} />
-        <Route path="/auth" element={user ? <Navigate to="/home" replace /> : <AuthScreen onNavigate={handleNavigate} />} />
+        {/* Rutas Públicas: Si ya hay usuario logueado, lo mandamos a su ruta correspondiente */}
+        <Route path="/" element={<Navigate to={user ? defaultLoggedInRoute : "/splash"} replace />} />
+        <Route path="/splash" element={user ? <Navigate to={defaultLoggedInRoute} replace /> : <SplashScreen onNavigate={handleNavigate} />} />
+        <Route path="/auth" element={user ? <Navigate to={defaultLoggedInRoute} replace /> : <AuthScreen onNavigate={handleNavigate} />} />
         
-        {/* Rutas Privadas: Si NO hay usuario, lo devolvemos al Splash */}
-        <Route path="/onboarding" element={!user ? <Navigate to="/splash" replace /> : <OnboardingScreen onNavigate={handleNavigate} />} />
+        {/* Rutas Privadas: Protegemos contra usuarios sin sesión y sin onboarding */}
+        <Route path="/onboarding" element={!user ? <Navigate to="/splash" replace /> : (hasCompletedOnboarding ? <Navigate to="/home" replace /> : <OnboardingScreen onNavigate={handleNavigate} />)} />
         {MAIN_SCREENS.map(s => (
-          <Route key={s} path={`/${s}`} element={!user ? <Navigate to="/splash" replace /> : <MainApp screen={s as Screen} onNavigate={handleNavigate} selectedRecipe={selectedRecipe} />} />
+          <Route key={s} path={`/${s}`} element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <MainApp screen={s as Screen} onNavigate={handleNavigate} selectedRecipe={selectedRecipe} />)} />
         ))}
-        <Route path="/recipeDetail" element={!user ? <Navigate to="/splash" replace /> : (selectedRecipe ? <RecipeDetailScreen recipe={selectedRecipe} onNavigate={handleNavigate} /> : <Navigate to="/recipes" replace />)} />
-        <Route path="/stats" element={!user ? <Navigate to="/splash" replace /> : <StatsScreen onNavigate={handleNavigate} />} />
-        <Route path="/settings" element={!user ? <Navigate to="/splash" replace /> : <SettingsScreen onNavigate={handleNavigate} />} />
-        <Route path="/editProfile" element={!user ? <Navigate to="/splash" replace /> : <EditProfileScreen onNavigate={handleNavigate} />} />
-        <Route path="/myObjetives" element={!user ? <Navigate to="/splash" replace /> : <MyObjetivesScreen onNavigate={handleNavigate} />} />
-        <Route path="/about" element={<AboutScreen onNavigate={handleNavigate} />} />
-        <Route path="*" element={<Navigate to={user ? "/home" : "/splash"} replace />} />
+        <Route path="/recipeDetail" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : (selectedRecipe ? <RecipeDetailScreen recipe={selectedRecipe} onNavigate={handleNavigate} /> : <Navigate to="/recipes" replace />))} />
+        <Route path="/stats" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <StatsScreen onNavigate={handleNavigate} />)} />
+        <Route path="/settings" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <SettingsScreen onNavigate={handleNavigate} />)} />
+        <Route path="/editProfile" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <EditProfileScreen onNavigate={handleNavigate} />)} />
+        <Route path="/myObjetives" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <MyObjetivesScreen onNavigate={handleNavigate} />)} />
+        <Route path="/about" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <AboutScreen onNavigate={handleNavigate} />)} />
+        <Route path="*" element={<Navigate to={user ? defaultLoggedInRoute : "/splash"} replace />} />
       </Routes>
     </div>
   );
