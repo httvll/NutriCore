@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Bell, Target, User, Zap, Activity, X, ChevronRight, Home, Leaf } from "lucide-react";
+import { ArrowLeft, Bell, Target, User, Zap, Activity, X, ChevronRight, Home, Leaf, Info } from "lucide-react";
 import StatusBar from "../components/StatusBar";
 import { Screen } from "../../types";   
 import { useAuth } from "../../context/AuthContext";
@@ -47,6 +47,9 @@ export default function SettingsScreen({ onNavigate }: { onNavigate: (s: Screen)
     { title: "Preferencias", items: [
       { icon: Bell, label: "Notificaciones", sub: "Recordatorios de comidas", color: "#F59E0B", toggle: true, togVal: notifs, onTog: () => { setNotifs(v => !v); showToast(notifs ? "Notificaciones desactivadas" : "Notificaciones activadas"); } },
       { icon: Zap, label: "Modo oscuro", sub: "Apariencia", color: "#8B5CF6", toggle: true, togVal: dark, onTog: () => { setDark(v => !v); showToast("El modo oscuro próximamente..."); } },
+    ]},
+    { title: "Acerca de la app", items: [
+      { icon: Info, label: "Información de NutriCore", sub: "Metodología, calidad y equipo", color: "#6366F1", onClick: () => onNavigate("about" as Screen) },
     ]},
     { title: "Datos y privacidad", items: [
       { icon: Activity, label: "Exportar datos", sub: "CSV / PDF", color: "#10B981", onClick: () => showToast("Generación de CSV en desarrollo...") },

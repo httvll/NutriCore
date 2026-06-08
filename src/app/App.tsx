@@ -15,6 +15,7 @@ import StatsScreen from "./screens/StatsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import EditProfileScreen from "./screens/EditProfileScreen";
 import MyObjetivesScreen from "./screens/ObjetiveScreen";
+import AboutScreen from "./screens/AboutScreen";
 
 function MainApp({ screen, onNavigate, selectedRecipe }: {
   screen: Screen; onNavigate: (s: Screen, data?: { recipe?: Recipe }) => void; selectedRecipe: Recipe | null;
@@ -53,9 +54,10 @@ export default function App() {
       {MAIN_SCREENS.includes(screen) && <MainApp screen={screen} onNavigate={navigate} selectedRecipe={selectedRecipe} />}
       {screen === "recipeDetail" && selectedRecipe && <RecipeDetailScreen recipe={selectedRecipe} onNavigate={navigate} />}
       {screen === "stats"       && <StatsScreen onNavigate={(s) => navigate(s)} />}
-      {screen === "settings"    && <SettingsScreen onNavigate={(s) => navigate(s)} />}
+      {screen === "settings"    && <SettingsScreen onNavigate={(s) => navigate(s as Screen)} />}
       {screen === "editProfile" && <EditProfileScreen onNavigate={(s) => navigate(s as Screen)} />}
       {screen === "myObjetives" && <MyObjetivesScreen onNavigate={(s) => navigate(s as Screen)} />}
+      {(screen as string) === "about"       && <AboutScreen onNavigate={(s) => navigate(s as Screen)} />}
     </div>
   );
 }
