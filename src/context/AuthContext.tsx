@@ -70,27 +70,32 @@ useEffect(() => {
   let mounted = true;
 
   // Timeout de seguridad: si en 5 segundos no resuelve, apagamos el spinner
-  const safetyTimer = setTimeout(() => {
-    if (mounted) setLoading(false);
-  }, 5000);
+ const safetyTimer = setTimeout(() => {
+  if (mounted) {
+    setLoading(false);
+    setInitialized(true); // ← agregar esto
+  }
+}, 5000);
 
   const initAuth = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) await loadProfile(session.user.id);
-    } catch (err) {
-      console.error("Error inicializando auth:", err);
-    } finally {
-      if (mounted) {
-        clearTimeout(safetyTimer);
-        setLoading(false);
-        setInitialized(true); // ← solo aquí se activa
-      }
+  console.log("🟡 initAuth arrancó");
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log("🟢 session obtenida:", session?.user?.email ?? "sin sesión");
+    if (!mounted) return;
+    setSession(session);
+    setUser(session?.user ?? null);
+    if (session?.user) await loadProfile(session.user.id);
+  } catch (err) {
+    console.error("🔴 Error inicializando auth:", err);
+  } finally {
+    if (mounted) {
+      clearTimeout(safetyTimer);
+      setLoading(false);
+      setInitialized(true);
     }
-  };
+  }
+};
 
  initAuth();
 
