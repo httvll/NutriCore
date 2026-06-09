@@ -49,8 +49,8 @@ function AppContent() {
     navigate(`/${to}`);
   };
 
-  // Pantalla de carga mientras Supabase restaura la sesión o carga el perfil
-  if (loading || (user && profileLoading)) {
+  // Pantalla de carga solo la primera vez, si aún no tenemos el perfil en memoria
+  if (loading || (user && profileLoading && !profile)) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />

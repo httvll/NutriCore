@@ -76,7 +76,7 @@ export default function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => 
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
   return (
-    <div className="relative h-full overflow-x-hidden overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
+    <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       {/* Header */}
       <div className="bg-white pt-2 pb-5 shadow-sm">
         <div className="px-5 mt-1">
