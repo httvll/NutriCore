@@ -42,7 +42,7 @@ const MAIN_SCREENS: Screen[] = ["home", "planner", "recipes", "shopping", "profi
 function AppContent() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, profileLoading } = useAuth();
 
   const handleNavigate = (to: Screen, data?: { recipe?: Recipe }) => {
     if (data?.recipe) setSelectedRecipe(data.recipe);
@@ -50,14 +50,15 @@ function AppContent() {
   };
 
   // Spinner ultra simple — solo depende del loading general
-  if (loading) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-bold text-slate-500">Cargando NutriCore...</p>
-      </div>
-    );
-  }
+// Spinner — espera AMBOS: auth Y perfil
+if (loading || profileLoading) {
+  return (
+    <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
+      <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
+      <p className="text-sm font-bold text-slate-500">Cargando NutriCore...</p>
+    </div>
+  );
+}
 
   const hasCompletedOnboarding = !!profile?.goal;
   const defaultLoggedInRoute = hasCompletedOnboarding ? "/home" : "/onboarding";
