@@ -189,6 +189,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
 
     setSaving(false);
     if (error) { setError(error.message); return; }
+    await new Promise(resolve => setTimeout(resolve, 300));   // Esperamos un tick para que el contexto procese el perfil actualizado
     onNavigate("home");
   }
 
