@@ -24,6 +24,8 @@ interface AuthContextValue {
   profile: UserProfile | null;
   loading: boolean;
   profileLoading: boolean;
+  initialized: boolean;
+
 
   signUp:        (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
   signIn:        (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>;
@@ -50,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile]   = useState<UserProfile | null>(null);
   const [loading, setLoading]               = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false); // nuevo estado
 
   const loadProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
@@ -83,12 +86,13 @@ useEffect(() => {
     } finally {
       if (mounted) {
         clearTimeout(safetyTimer);
-        setLoading(false); // siempre se apaga
+        setLoading(false);
+        setInitialized(true); // ← solo aquí se activa
       }
     }
   };
 
-  initAuth();
+ initAuth();
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange(
     async (_event, session) => {
@@ -249,6 +253,7 @@ useEffect(() => {
       session, user, profile, loading, profileLoading,
       signUp, signIn, signOut, updateProfile, refreshProfile,
       getNotes, addNote, updateNote, deleteNote, getLabResults, getWeightLogs, logWeight,
+      initialized,
     }}>
       {children}
     </AuthContext.Provider>
