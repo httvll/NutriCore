@@ -65,24 +65,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileLoading(false);
   }, []);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+useEffect(() => {
+  let initialEventProcessed = false;
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) await loadProfile(session.user.id); // esperar el perfil
-      setLoading(false);
-    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) loadProfile(session.user.id);
-        else setProfile(null);
+      // Esperamos el perfil ANTES de permitir cualquier decisión de routing
+      if (session?.user) {
+        await loadProfile(session.user.id);
+      } else {
+        setProfile(null);
       }
-    );
-    return () => subscription.unsubscribe();
-  }, [loadProfile]);
+
+      // Loading se apaga una sola vez, después del primer evento
+      if (!initialEventProcessed) {
+        initialEventProcessed = true;
+        setLoading(false);
+      }
+    }
+  );
+
+  return () => subscription.unsubscribe();
+}, [loadProfile]);
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const signUp = async (email: string, password: string, fullName: string) => {
