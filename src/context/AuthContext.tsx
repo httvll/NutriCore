@@ -55,16 +55,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false); // nuevo estado
 
   const loadProfile = useCallback(async (userId: string) => {
-    setProfileLoading(true);
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    if (error && error.code !== "PGRST116") console.error("Error cargando perfil:", error.message);
-    setProfile(data ?? null);
-    setProfileLoading(false);
-  }, []);
+  setProfileLoading(true);
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+  
+  console.log("📋 loadProfile resultado:", { data, error }); // TEMPORAL
+  
+  if (error && error.code !== "PGRST116") console.error("Error cargando perfil:", error.message);
+  setProfile(data ?? null);
+  setProfileLoading(false);
+}, []);
 
 useEffect(() => {
   let mounted = true;
