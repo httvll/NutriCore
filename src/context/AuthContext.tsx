@@ -66,17 +66,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
-      // getSession() garantiza token válido (refresca si está vencido) antes de cualquier query
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!mounted) return;
-
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) await loadProfile(session.user.id);
-
-      if (mounted) {
-        setLoading(false);
-        setInitialized(true);
+      try {
+        // getSession() garantiza token válido (refresca si está vencido) antes de cualquier query
+        const { data, error } = await supabase.auth.getSession();
+        if (error) console.error("Error al verificar sesión:", error.message);
+        const session = data?.session ?? null;
+        
+        if (!mounted) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) await loadProfile(session.user.id);
+      } catch (err) {
+        console.error("Error fatal en inicialización de Auth:", err);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
     };
 
