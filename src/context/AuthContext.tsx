@@ -106,15 +106,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return { error: new Error("No hay usuario autenticado") };
     
-    // Como ahora la base de datos crea el perfil automáticamente con el Trigger,
-    // solo necesitamos hacer un UPDATE directo. Esto evita cualquier error de permisos.
-    const { error } = await supabase
+    // 1. Intentamos actualizar el perfil
+    const { data, error } = await supabase
       .from("user_profiles")
       .update(updates)
-      .eq("id", user.id);
+      .eq("id", user.id)
+      .select();
     
-    if (!error) await loadProfile(user.id);
-    return { error: error ? new Error(error.message) : null };
+    // 2. Si no hay error pero no devolvió datos, significa que la fila NO EXISTÍA
+    // Esto ocurre si el Trigger de la BD falló o la cuenta es muy antigua.
+    if (!error && data && data.length === 0) {
+      const { error: insertError } = await supabase
+        .from("user_profiles")
+        .insert({ id: user.id, ...updates });
+      
+      if (insertError) return { error: new Error(insertError.message) };
+    } else if (error) {
+      return { error: new Error(error.message) };
+    }
+    
+    await loadProfile(user.id);
+    return { error: null };
   };
 
   const refreshProfile = async () => {
