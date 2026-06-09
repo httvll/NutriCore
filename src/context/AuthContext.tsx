@@ -24,6 +24,7 @@ interface AuthContextValue {
   profile: UserProfile | null;
   loading: boolean;
   profileLoading: boolean;
+  profileLoadFailed: boolean;
 
   signUp:        (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
   signIn:        (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>;
@@ -50,9 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile]   = useState<UserProfile | null>(null);
   const [loading, setLoading]               = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [profileLoadFailed, setProfileLoadFailed] = useState(false);
 
   const loadProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
+    setProfileLoadFailed(false);
     const { data, error } = await supabase
       .from("user_profiles")
       .select("*")
@@ -60,36 +63,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
     if (error && error.code !== "PGRST116") {
       console.error("Error cargando perfil:", error.message);
+      setProfileLoadFailed(true);
     }
     setProfile(data ?? null);
     setProfileLoading(false);
   }, []);
 
-useEffect(() => {
-  let initialEventProcessed = false;
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (_event, session) => {
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) await loadProfile(session.user.id);
+      setLoading(false);
+    };
 
-      // Esperamos el perfil ANTES de permitir cualquier decisión de routing
-      if (session?.user) {
-        await loadProfile(session.user.id);
-      } else {
-        setProfile(null);
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) await loadProfile(session.user.id);
+        else setProfile(null);
       }
+    );
 
-      // Loading se apaga una sola vez, después del primer evento
-      if (!initialEventProcessed) {
-        initialEventProcessed = true;
-        setLoading(false);
-      }
-    }
-  );
-
-  return () => subscription.unsubscribe();
-}, [loadProfile]);
+    return () => subscription.unsubscribe();
+  }, [loadProfile]);
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const signUp = async (email: string, password: string, fullName: string) => {
@@ -230,7 +231,7 @@ useEffect(() => {
 
   return (
     <AuthContext.Provider value={{
-      session, user, profile, loading, profileLoading,
+      session, user, profile, loading, profileLoading, profileLoadFailed,
       signUp, signIn, signOut, updateProfile, refreshProfile,
       getNotes, addNote, updateNote, deleteNote, getLabResults, getWeightLogs, logWeight,
     }}>

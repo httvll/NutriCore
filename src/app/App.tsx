@@ -42,33 +42,25 @@ const MAIN_SCREENS: Screen[] = ["home", "planner", "recipes", "shopping", "profi
 function AppContent() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const navigate = useNavigate();
-  const { user, profile, loading, profileLoading } = useAuth();
+  const { user, profile, loading, profileLoading, profileLoadFailed } = useAuth();
 
   const handleNavigate = (to: Screen, data?: { recipe?: Recipe }) => {
     if (data?.recipe) setSelectedRecipe(data.recipe);
     navigate(`/${to}`);
   };
 
-  // ✅ FIX 1: Esperar a que AMBOS estados terminen de cargar
-  // Antes solo cubría un subconjunto de casos
-if (user && !profile) {
-  return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 px-8 text-center">
-      <p className="text-slate-700 font-bold text-base mb-2">Error al cargar tu perfil</p>
-      <p className="text-slate-400 text-sm mb-6">Revisa tu conexión e intenta de nuevo</p>
-      <button
-        onClick={() => window.location.reload()}
-        className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-2xl text-sm"
-      >
-        Reintentar
-      </button>
-    </div>
-  );
-}
+  // Spinner — espera sesión Y perfil
+  if (loading || profileLoading) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-bold text-slate-500">Cargando NutriCore...</p>
+      </div>
+    );
+  }
 
-  // ✅ FIX 2: Si hay usuario pero el perfil falló (null), 
-  // no asumir que es usuario nuevo — mostrar error con reintento
-  if (user && profile === null) {
+  // Mostrar error con reintento únicamente si la red o base de datos falló genuinamente
+  if (user && profileLoadFailed) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 px-8 text-center">
         <p className="text-slate-700 font-bold text-base mb-2">Error al cargar tu perfil</p>
