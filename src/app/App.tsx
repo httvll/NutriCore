@@ -49,8 +49,8 @@ function AppContent() {
     navigate(`/${to}`);
   };
 
-  // Spinner — espera sesión Y perfil
-  if (loading || profileLoading) {
+  // Spinner — bloquea la app SOLO en la carga inicial, para evitar parpadeos luego
+  if (loading || (user && profileLoading && !profile && !profileLoadFailed)) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />

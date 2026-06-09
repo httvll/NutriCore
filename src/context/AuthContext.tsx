@@ -56,36 +56,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
     setProfileLoadFailed(false);
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    if (error && error.code !== "PGRST116") {
-      console.error("Error cargando perfil:", error.message);
+    try {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error && error.code !== "PGRST116") {
+        console.error("Error cargando perfil:", error.message);
+        setProfileLoadFailed(true);
+      }
+      setProfile(data ?? null);
+    } catch (err) {
+      console.error("Excepción al cargar perfil:", err);
       setProfileLoadFailed(true);
+    } finally {
+      setProfileLoading(false);
     }
-    setProfile(data ?? null);
-    setProfileLoading(false);
   }, []);
 
   useEffect(() => {
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) await loadProfile(session.user.id);
-      setLoading(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) await loadProfile(session.user.id);
+      } catch (err) {
+        console.error("Error inicializando auth:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) await loadProfile(session.user.id);
-        else setProfile(null);
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
+          if (session?.user) await loadProfile(session.user.id);
+          else setProfile(null);
+        } catch (err) {
+          console.error("Error en auth state change:", err);
+        }
       }
     );
 
