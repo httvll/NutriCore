@@ -64,7 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    let initialEventProcessed = false;
+    // Carga inicial obligatoria
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) await loadProfile(session.user.id);
+      setLoading(false); // 🟢 Se apaga siempre sin excepciones
+    };
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -73,11 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (session?.user) await loadProfile(session.user.id);
         else setProfile(null);
-
-        if (!initialEventProcessed) {
-          initialEventProcessed = true;
-          setLoading(false);
-        }
       }
     );
 
