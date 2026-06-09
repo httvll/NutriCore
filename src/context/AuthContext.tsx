@@ -1,13 +1,12 @@
 // src/context/AuthContext.tsx
 import React, {
-  createContext, useContext, useEffect, useState, useCallback,
+  createContext, useContext, useEffect, useState, useCallback, useRef,
   type ReactNode,
 } from "react";
 import type { Session, User, AuthError } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import type { UserProfile, LabResultRecord, WeightLogRecord } from "../lib/database.types";
 
-// ─── Tipo para las notas ───────────────────────────────────────────────────────
 export interface NutritionistNote {
   id: string;
   user_id: string;
@@ -17,7 +16,6 @@ export interface NutritionistNote {
   created_at: string;
 }
 
-// ─── Tipos del contexto ───────────────────────────────────────────────────────
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
@@ -25,15 +23,11 @@ interface AuthContextValue {
   loading: boolean;
   profileLoading: boolean;
   initialized: boolean;
-
-
   signUp:        (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
   signIn:        (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>;
   signOut:       () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
-
-  // ── Notas del nutricionista ─────────────────────────────────────────────────
   getNotes:   () => Promise<NutritionistNote[]>;
   addNote:    (text: string, author: string) => Promise<{ error: Error | null }>;
   updateNote: (id: string, text: string, author: string) => Promise<{ error: Error | null }>;
@@ -45,83 +39,94 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession]   = useState<Session | null>(null);
-  const [user, setUser]         = useState<User | null>(null);
-  const [profile, setProfile]   = useState<UserProfile | null>(null);
-  const [loading, setLoading]               = useState(true);
+  const [session, setSession]       = useState<Session | null>(null);
+  const [user, setUser]             = useState<User | null>(null);
+  const [profile, setProfile]       = useState<UserProfile | null>(null);
+  const [loading, setLoading]       = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false); // nuevo estado
+  const [initialized, setInitialized] = useState(false);
+
+  // Usamos ref para evitar doble carga del perfil
+  const initDone = useRef(false);
 
   const loadProfile = useCallback(async (userId: string) => {
-  setProfileLoading(true);
-  const { data, error } = await supabase
-    .from("user_profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
-  
-  console.log("📋 loadProfile resultado:", { data, error }); // TEMPORAL
-  
-  if (error && error.code !== "PGRST116") console.error("Error cargando perfil:", error.message);
-  setProfile(data ?? null);
-  setProfileLoading(false);
-}, []);
+    setProfileLoading(true);
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (error && error.code !== "PGRST116") console.error("Error cargando perfil:", error.message);
+    setProfile(data ?? null);
+    setProfileLoading(false);
+    return data;
+  }, []);
 
-useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-  // Timeout de seguridad: si en 5 segundos no resuelve, apagamos el spinner
- const safetyTimer = setTimeout(() => {
-  if (mounted) {
-    setLoading(false);
-    setInitialized(true); // ← agregar esto
-  }
-}, 5000);
+    // Safety timer: si algo falla, desbloqueamos la app en 8 segundos
+    const safetyTimer = setTimeout(() => {
+      if (mounted && !initDone.current) {
+        setLoading(false);
+        setInitialized(true);
+      }
+    }, 8000);
 
-  const initAuth = async () => {
-  console.log("🟡 initAuth arrancó");
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log("🟢 session obtenida:", session?.user?.email ?? "sin sesión");
-    if (!mounted) return;
-    setSession(session);
-    setUser(session?.user ?? null);
-    if (session?.user) await loadProfile(session.user.id);
-  } catch (err) {
-    console.error("🔴 Error inicializando auth:", err);
-  } finally {
-    if (mounted) {
+    // onAuthStateChange es la fuente de verdad principal en Supabase v2
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await loadProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+
+        // Solo marcamos como inicializado la primera vez
+        if (!initDone.current) {
+          initDone.current = true;
+          clearTimeout(safetyTimer);
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    );
+
+    // getSession dispara onAuthStateChange automáticamente en Supabase v2
+    // Solo lo usamos como fallback por si onAuthStateChange no se dispara
+    const fallbackTimer = setTimeout(async () => {
+      if (!initDone.current && mounted) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) await loadProfile(session.user.id);
+        else setProfile(null);
+        if (!initDone.current) {
+          initDone.current = true;
+          clearTimeout(safetyTimer);
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    }, 1500);
+
+    return () => {
+      mounted = false;
       clearTimeout(safetyTimer);
-      setLoading(false);
-      setInitialized(true);
-    }
-  }
-};
+      clearTimeout(fallbackTimer);
+      subscription.unsubscribe();
+    };
+  }, [loadProfile]);
 
- initAuth();
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    async (_event, session) => {
-      if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) await loadProfile(session.user.id);
-      else setProfile(null);
-    }
-  );
-
-  return () => {
-    mounted = false;
-    clearTimeout(safetyTimer);
-    subscription.unsubscribe();
-  };
-}, [loadProfile]);
-
-  // ── Auth ────────────────────────────────────────────────────────────────────
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email, password,
       options: { data: { full_name: fullName } },
     });
@@ -140,26 +145,19 @@ useEffect(() => {
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return { error: new Error("No hay usuario autenticado") };
-    
-    // 1. Intentamos actualizar el perfil
     const { data, error } = await supabase
       .from("user_profiles")
       .update(updates)
       .eq("id", user.id)
       .select();
-    
-    // 2. Si no hay error pero no devolvió datos, significa que la fila NO EXISTÍA
-    // Esto ocurre si el Trigger de la BD falló o la cuenta es muy antigua.
     if (!error && data && data.length === 0) {
       const { error: insertError } = await supabase
         .from("user_profiles")
         .insert({ id: user.id, ...updates });
-      
       if (insertError) return { error: new Error(insertError.message) };
     } else if (error) {
       return { error: new Error(error.message) };
     }
-    
     await loadProfile(user.id);
     return { error: null };
   };
@@ -168,7 +166,6 @@ useEffect(() => {
     if (user) await loadProfile(user.id);
   };
 
-  // ── Notas del nutricionista ─────────────────────────────────────────────────
   const getNotes = async (): Promise<NutritionistNote[]> => {
     if (!user) return [];
     const { data, error } = await supabase
@@ -197,7 +194,7 @@ useEffect(() => {
       .from("nutritionist_notes")
       .update({ note_text: text, author_name: author || "Sin especificar" })
       .eq("id", id)
-      .eq("user_id", user.id);   // RLS extra: solo el dueño puede editar
+      .eq("user_id", user.id);
     return { error: error ? new Error(error.message) : null };
   };
 
@@ -210,7 +207,6 @@ useEffect(() => {
       .eq("user_id", user.id);
   };
 
-  // ── Exámenes médicos ────────────────────────────────────────────────────────
   const getLabResults = async (): Promise<LabResultRecord[]> => {
     if (!user) return [];
     const { data, error } = await supabase
@@ -222,14 +218,13 @@ useEffect(() => {
     return data ?? [];
   };
 
-  // ── Historial de Peso ───────────────────────────────────────────────────────
   const getWeightLogs = async (): Promise<WeightLogRecord[]> => {
     if (!user) return [];
     const { data, error } = await supabase
       .from("weight_logs")
       .select("*")
       .eq("user_id", user.id)
-      .order("logged_date", { ascending: true }); // Ascendente para la gráfica
+      .order("logged_date", { ascending: true });
     if (error) console.error("Error cargando historial de peso:", error.message);
     return data ?? [];
   };
@@ -238,10 +233,7 @@ useEffect(() => {
     if (!user) return { error: new Error("Sin sesión") };
     const today = new Date();
     const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
-
-    // Revisar si ya hay un peso registrado HOY para actualizarlo en vez de duplicar
     const { data: existing } = await supabase.from("weight_logs").select("id").eq("user_id", user.id).eq("logged_date", localDate).single();
-
     let dbError;
     if (existing) {
       const { error } = await supabase.from("weight_logs").update({ weight_kg: weight }).eq("id", existing.id);
@@ -250,25 +242,21 @@ useEffect(() => {
       const { error } = await supabase.from("weight_logs").insert({ user_id: user.id, weight_kg: weight, logged_date: localDate });
       dbError = error;
     }
-
-    // También actualizamos el perfil principal
     if (!dbError) await updateProfile({ weight_kg: weight });
     return { error: dbError ? new Error(dbError.message) : null };
   };
 
   return (
     <AuthContext.Provider value={{
-      session, user, profile, loading, profileLoading,
+      session, user, profile, loading, profileLoading, initialized,
       signUp, signIn, signOut, updateProfile, refreshProfile,
       getNotes, addNote, updateNote, deleteNote, getLabResults, getWeightLogs, logWeight,
-      initialized,
     }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth debe usarse dentro de <AuthProvider>");
