@@ -49,8 +49,9 @@ function AppContent() {
     navigate(`/${to}`);
   };
 
-  // Pantalla de carga solo la primera vez, si aún no tenemos el perfil en memoria
-  if (loading || (user && profileLoading && !profile)) {
+  // ✅ FIX 1: Esperar a que AMBOS estados terminen de cargar
+  // Antes solo cubría un subconjunto de casos
+  if (loading || profileLoading) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
@@ -59,19 +60,32 @@ function AppContent() {
     );
   }
 
-  // Verificamos si el usuario ya completó el onboarding (tiene una meta)
+  // ✅ FIX 2: Si hay usuario pero el perfil falló (null), 
+  // no asumir que es usuario nuevo — mostrar error con reintento
+  if (user && profile === null) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 px-8 text-center">
+        <p className="text-slate-700 font-bold text-base mb-2">Error al cargar tu perfil</p>
+        <p className="text-slate-400 text-sm mb-6">Revisa tu conexión e intenta de nuevo</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-2xl text-sm"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
   const hasCompletedOnboarding = !!profile?.goal;
   const defaultLoggedInRoute = hasCompletedOnboarding ? "/home" : "/onboarding";
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-white">
       <Routes>
-        {/* Rutas Públicas: Si ya hay usuario logueado, lo mandamos a su ruta correspondiente */}
         <Route path="/" element={<Navigate to={user ? defaultLoggedInRoute : "/splash"} replace />} />
         <Route path="/splash" element={user ? <Navigate to={defaultLoggedInRoute} replace /> : <SplashScreen onNavigate={handleNavigate} />} />
         <Route path="/auth" element={user ? <Navigate to={defaultLoggedInRoute} replace /> : <AuthScreen onNavigate={handleNavigate} />} />
-        
-        {/* Rutas Privadas: Protegemos contra usuarios sin sesión y sin onboarding */}
         <Route path="/onboarding" element={!user ? <Navigate to="/splash" replace /> : (hasCompletedOnboarding ? <Navigate to="/home" replace /> : <OnboardingScreen onNavigate={handleNavigate} />)} />
         {MAIN_SCREENS.map(s => (
           <Route key={s} path={`/${s}`} element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <MainApp screen={s as Screen} onNavigate={handleNavigate} selectedRecipe={selectedRecipe} />)} />
