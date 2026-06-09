@@ -24,7 +24,6 @@ interface AuthContextValue {
   profile: UserProfile | null;
   loading: boolean;
   profileLoading: boolean;
-  profileLoadFailed: boolean;
 
   signUp:        (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
   signIn:        (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>;
@@ -51,55 +50,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile]   = useState<UserProfile | null>(null);
   const [loading, setLoading]               = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [profileLoadFailed, setProfileLoadFailed] = useState(false);
 
   const loadProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
-    setProfileLoadFailed(false);
-    try {
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      if (error && error.code !== "PGRST116") {
-        console.error("Error cargando perfil:", error.message);
-        setProfileLoadFailed(true);
-      }
-      setProfile(data ?? null);
-    } catch (err) {
-      console.error("Excepción al cargar perfil:", err);
-      setProfileLoadFailed(true);
-    } finally {
-      setProfileLoading(false);
-    }
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (error && error.code !== "PGRST116") console.error("Error cargando perfil:", error.message);
+    setProfile(data ?? null);
+    setProfileLoading(false);
   }, []);
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) await loadProfile(session.user.id);
-      } catch (err) {
-        console.error("Error inicializando auth:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
+    let initialEventProcessed = false;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        try {
-          setSession(session);
-          setUser(session?.user ?? null);
-          if (session?.user) await loadProfile(session.user.id);
-          else setProfile(null);
-        } catch (err) {
-          console.error("Error en auth state change:", err);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) await loadProfile(session.user.id);
+        else setProfile(null);
+
+        if (!initialEventProcessed) {
+          initialEventProcessed = true;
+          setLoading(false);
         }
       }
     );
@@ -246,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      session, user, profile, loading, profileLoading, profileLoadFailed,
+      session, user, profile, loading, profileLoading,
       signUp, signIn, signOut, updateProfile, refreshProfile,
       getNotes, addNote, updateNote, deleteNote, getLabResults, getWeightLogs, logWeight,
     }}>
