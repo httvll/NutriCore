@@ -63,30 +63,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileLoading(false);
   }, []);
 
-  useEffect(() => {
-    // Carga inicial obligatoria
-    const initAuth = async () => {
+useEffect(() => {
+  let mounted = true;
+
+  // Timeout de seguridad: si en 5 segundos no resuelve, apagamos el spinner
+  const safetyTimer = setTimeout(() => {
+    if (mounted) setLoading(false);
+  }, 5000);
+
+  const initAuth = async () => {
+    try {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) await loadProfile(session.user.id);
-      setLoading(false); // 🟢 Se apaga siempre sin excepciones
-    };
-
-    initAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) await loadProfile(session.user.id);
-        else setProfile(null);
+    } catch (err) {
+      console.error("Error inicializando auth:", err);
+    } finally {
+      if (mounted) {
+        clearTimeout(safetyTimer);
+        setLoading(false); // siempre se apaga
       }
-    );
+    }
+  };
 
-    return () => subscription.unsubscribe();
-  }, [loadProfile]);
+  initAuth();
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (_event, session) => {
+      if (!mounted) return;
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) await loadProfile(session.user.id);
+      else setProfile(null);
+    }
+  );
+
+  return () => {
+    mounted = false;
+    clearTimeout(safetyTimer);
+    subscription.unsubscribe();
+  };
+}, [loadProfile]);
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const signUp = async (email: string, password: string, fullName: string) => {
