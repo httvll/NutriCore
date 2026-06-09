@@ -48,7 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
 
   // Usamos ref para evitar doble carga del perfil
-  const initDone = useRef(false);
 
   const loadProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
@@ -66,61 +65,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Safety timer: si algo falla, desbloqueamos la app en 8 segundos
-    const safetyTimer = setTimeout(() => {
-      if (mounted && !initDone.current) {
+    const initAuth = async () => {
+      // getSession() garantiza token válido (refresca si está vencido) antes de cualquier query
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) await loadProfile(session.user.id);
+
+      if (mounted) {
         setLoading(false);
         setInitialized(true);
       }
-    }, 8000);
+    };
 
-    // onAuthStateChange es la fuente de verdad principal en Supabase v2
+    initAuth();
+
+    // onAuthStateChange solo para cambios POSTERIORES (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          await loadProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-
-        // Solo marcamos como inicializado la primera vez
-        if (!initDone.current) {
-          initDone.current = true;
-          clearTimeout(safetyTimer);
-          setLoading(false);
-          setInitialized(true);
-        }
-      }
-    );
-
-    // getSession dispara onAuthStateChange automáticamente en Supabase v2
-    // Solo lo usamos como fallback por si onAuthStateChange no se dispara
-    const fallbackTimer = setTimeout(async () => {
-      if (!initDone.current && mounted) {
-        const { data: { session } } = await supabase.auth.getSession();
+      async (_event, session) => {
         if (!mounted) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) await loadProfile(session.user.id);
         else setProfile(null);
-        if (!initDone.current) {
-          initDone.current = true;
-          clearTimeout(safetyTimer);
-          setLoading(false);
-          setInitialized(true);
-        }
       }
-    }, 1500);
+    );
 
     return () => {
       mounted = false;
-      clearTimeout(safetyTimer);
-      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, [loadProfile]);
