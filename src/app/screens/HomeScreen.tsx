@@ -38,8 +38,8 @@ export default function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => 
   const fatConsumed  = meals.filter(m => m.completed).reduce((s, m) => s + m.fat_g, 0);
 
   const macros = [
-    { label: "Proteínas", consumed: proConsumed, goal: proGoal, unit: "g", color: "#3B82F6" },
     { label: "Carbohidratos", consumed: carbConsumed, goal: carbGoal, unit: "g", color: "#F59E0B" },
+    { label: "Proteínas", consumed: proConsumed, goal: proGoal, unit: "g", color: "#3B82F6" },
     { label: "Grasas", consumed: fatConsumed, goal: fatGoal, unit: "g", color: "#EC4899" },
   ];
 
@@ -76,7 +76,7 @@ export default function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => 
   const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
+      <div className="relative h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       {/* Header */}
       <div className="bg-white pt-2 pb-5 shadow-sm">
         <div className="px-5 mt-1">
@@ -203,9 +203,9 @@ export default function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => 
       </div>
 
       {/* Panel de Notificaciones (Side Drawer con deslizamiento fluido) */}
-      <div 
-        className={`absolute inset-0 z-50 transition-all duration-300 ${showNotifications ? "opacity-100 visible" : "opacity-0 invisible"}`} 
-      >
+        <div 
+          className={`absolute inset-0 z-50 overflow-hidden transition-all duration-300 ${showNotifications ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"  }`} 
+        >
         {/* Fondo oscuro semi-transparente */}
         <div className="absolute inset-0 bg-black/40" onClick={() => setShowNotifications(false)} />
         

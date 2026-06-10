@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Bell, Target, User, Zap, Activity, X, ChevronRight, Home, Leaf, Info } from "lucide-react";
+import { ArrowLeft, Bell, Target, User, Zap, Activity, X, ChevronRight, Home, Leaf, Info, Shield } from "lucide-react";
 import { Screen } from "../../types";   
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -40,8 +40,9 @@ export default function SettingsScreen({ onNavigate }: { onNavigate: (s: Screen)
 
   const sections: { title: string; items: Array<{ icon: typeof Home; label: string; sub: string; color: string; toggle?: boolean; togVal?: boolean; onTog?: () => void; onClick?: () => void }> }[] = [
     { title: "Cuenta", items: [
-      { icon: User, label: "Editar perfil", sub: fullName, color: "#059669", onClick: () => onNavigate("editProfile" as Screen) },
-      { icon: Target, label: "Mis objetivos", sub: `${goalText} · ${kcalText}`, color: "#3B82F6", onClick: () => onNavigate("myObjetives" as Screen) },
+      { icon: User, label: "Datos personales", sub: "Nombre, peso, altura...", color: "#059669", onClick: () => onNavigate("editProfile" as Screen) },
+      { icon: Target, label: "Perfil Nutricional", sub: "Metas, dieta y preferencias", color: "#3B82F6", onClick: () => onNavigate("nutritionalProfile" as Screen) },
+      { icon: Shield, label: "Seguridad", sub: "Contraseña y correo", color: "#64748B", onClick: () => onNavigate("security" as Screen) },
     ]},
     { title: "Preferencias", items: [
       { icon: Bell, label: "Notificaciones", sub: "Recordatorios de comidas", color: "#F59E0B", toggle: true, togVal: notifs, onTog: () => { setNotifs(v => !v); showToast(notifs ? "Notificaciones desactivadas" : "Notificaciones activadas"); } },

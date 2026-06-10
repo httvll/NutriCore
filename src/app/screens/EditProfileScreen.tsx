@@ -4,69 +4,10 @@ import { useAuth } from "../../context/AuthContext";
 import type { Screen } from "../../types";
 import type { Database } from "../../lib/database.types";
 import { supabase } from "../../lib/supabase";
+import { calcKcal, calcMacros } from "../../lib/nutritionUtils";
 
 type ActivityLevel = Database["public"]["Enums"]["activity_level"];
 type DietGoal     = Database["public"]["Enums"]["diet_goal"];
-
-// ─── Utilidades para recalcular metas en tiempo real ─────────────────────────
-const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {
-  sedentario:  1.2,
-  ligero:      1.375,
-  moderado:    1.55,
-  activo:      1.725,
-  muy_activo:  1.9,
-};
-
-function calcKcal(sex: string, weight: number, height: number, age: number, activity: ActivityLevel, goal: DietGoal): number {
-  const bmr = sex === "femenino"
-      ? 10 * weight + 6.25 * height - 5 * age - 161
-      : 10 * weight + 6.25 * height - 5 * age + 5;
-  const tdee = bmr * (ACTIVITY_FACTOR[activity] ?? 1.375);
-  if (goal === "bajar_peso")    return Math.round(tdee - 500);
-  if (goal === "ganar_musculo") return Math.round(tdee + 250);
-  return Math.round(tdee);
-}
-
-function calcMacros(kcal: number, weight: number, goal: DietGoal, dietType?: string | null) {
-  if (dietType?.toLowerCase().includes("cetogénica")) {
-    return {
-      protein: Math.round((kcal * 0.20) / 4),
-      carbs: Math.min(50, Math.round((kcal * 0.10) / 4)),
-      fat: Math.round((kcal * 0.70) / 9),
-    };
-  }
-
-  let protein = 0;
-  let carbs = 0;
-  let fat = 0;
-
-  switch (goal) {
-    case "bajar_peso":
-      protein = Math.round(weight * 2);
-      carbs = Math.round((kcal * 0.40) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-    case "ganar_musculo":
-      protein = Math.round(weight * 2);
-      carbs = Math.round((kcal * 0.50) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-    case "mejorar_salud":
-      protein = Math.round(weight * 1.5);
-      carbs = Math.round((kcal * 0.45) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-    case "mantener":
-    default:
-      protein = Math.round(weight * 1.5);
-      carbs = Math.round((kcal * 0.50) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-  }
-
-  if (fat < 0) fat = 0;
-  return { protein, carbs, fat };
-}
 
 // ─── Componente Principal ───────────────────────────────────────────────────
 export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
@@ -77,9 +18,6 @@ export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Scre
   const [age, setAge] = useState(profile?.age ?? 25);
   const [heightCm, setHeightCm] = useState(profile?.height_cm ?? 165);
   const [weightKg, setWeightKg] = useState(profile?.weight_kg ?? 65);
-  const [goal, setGoal] = useState<DietGoal>(profile?.goal ?? "mantener");
-  const [activity, setActivity] = useState<ActivityLevel>(profile?.activity_level ?? "sedentario");
-  const [dislikedFoods, setDislikedFoods] = useState(profile?.disliked_foods ?? "");
   
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -114,12 +52,13 @@ export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Scre
       if (e.target) e.target.value = "";
     }
   };
-
   const handleSave = async () => {
     setSaving(true);
     
     // Recalcular metas calóricas usando los datos nuevos
     const sex = profile?.sex || "femenino";
+    const goal = profile?.goal || "mantener";
+    const activity = profile?.activity_level || "sedentario";
     const kcal = calcKcal(sex, weightKg, heightCm, age, activity, goal);
     const macros = calcMacros(kcal, weightKg, goal, profile?.diet_type);
 
@@ -128,9 +67,6 @@ export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Scre
       age,
       height_cm: heightCm,
       weight_kg: weightKg,
-      goal,
-      activity_level: activity,
-      disliked_foods: dislikedFoods.trim() || null,
       calories_goal: kcal,
       protein_goal_g: macros.protein,
       carbs_goal_g: macros.carbs,
@@ -142,7 +78,7 @@ export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Scre
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-slate-50 flex flex-col" style={{ scrollbarWidth: "none" }}>
+    <div className="h-full overflow-y-auto bg-slate-50 flex flex-col relative" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-4 shadow-sm sticky top-0 z-10">
         <div className="flex items-center justify-between px-5 mt-1">
           <div className="flex items-center gap-3">
@@ -158,7 +94,7 @@ export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Scre
         {/* Datos Personales */}
         <div className="space-y-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
           <h3 className="text-sm font-extrabold text-slate-900 mb-2">Datos personales</h3>
-          
+
           <div className="flex justify-center mb-4">
             <div className="relative">
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarUpload} />
@@ -185,7 +121,6 @@ export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Scre
               </div>
             </div>
           </div>
-
           <div>
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1 block">Nombre completo</label>
             <input value={fullName} onChange={e => setFullName(e.target.value)} className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-sm font-semibold text-slate-800 focus:border-emerald-400 focus:outline-none transition-colors" />
@@ -206,18 +141,8 @@ export default function EditProfileScreen({ onNavigate }: { onNavigate: (s: Scre
           </div>
         </div>
 
-        {/* Preferencias / Exclusiones */}
-        <div className="space-y-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="text-sm font-extrabold text-slate-900 mb-2">Preferencias alimenticias</h3>
-          <div>
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1 block">Alimentos que no te gustan</label>
-            <input value={dislikedFoods} onChange={e => setDislikedFoods(e.target.value)} placeholder="Ej: cebolla, champiñones, cilantro" className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-sm font-semibold text-slate-800 focus:border-emerald-400 focus:outline-none transition-colors" />
-            <p className="text-[10px] text-slate-400 mt-1 ml-1">Separa con comas para que el planificador los excluya.</p>
-          </div>
-        </div>
-
         <button onClick={handleSave} disabled={saving} className="w-full py-4 rounded-2xl bg-emerald-600 text-white font-bold text-sm shadow-lg shadow-emerald-200 active:scale-95 transition-transform disabled:opacity-70">
-          {saving ? "Guardando cambios..." : "Guardar cambios"}
+          {saving ? "Guardando cambios..." : "Guardar Cambios"}
         </button>
       </div>
 

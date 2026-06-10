@@ -1,8 +1,8 @@
 // src/app/screens/ProfileScreen.tsx
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   BarChart2, BookOpen, ChevronRight, Edit3, Flame,
-  HeartPulse, Plus, Settings, Target, X, Camera
+  HeartPulse, Plus, Settings, Target, X
 } from "lucide-react";
 import { MacroBar } from "../components/MacroBar";
 import { useAuth, type NutritionistNote } from "../../context/AuthContext";
@@ -38,38 +38,6 @@ export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) 
   const [noteText, setNoteText]     = useState("");
   const [noteAuthor, setNoteAuthor] = useState("");
   const [saving, setSaving]         = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    setUploadingAvatar(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, file);
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
-      const { error: updateError } = await updateProfile({ avatar_url: publicUrl });
-      if (updateError) throw updateError;
-
-      showToast("Foto de perfil actualizada");
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : (error as any)?.message || "desconocido";
-      console.error("Error al subir imagen:", error);
-      showToast("Error al subir: " + msg);
-    } finally {
-      setUploadingAvatar(false);
-      if (e.target) e.target.value = "";
-    }
-  };
 
   // Cargar notas al montar
   useEffect(() => {
@@ -120,14 +88,14 @@ export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) 
 
   // Macros desde el perfil (meta, sin consumo — eso va en HomeScreen)
   const macroGoals = [
-    { label: "Proteínas",     goal: profile?.protein_goal_g ?? 130, consumed: 0, color: "#3B82F6", unit: "g" },
     { label: "Carbohidratos", goal: profile?.carbs_goal_g   ?? 185, consumed: 0, color: "#F59E0B", unit: "g" },
+    { label: "Proteínas",     goal: profile?.protein_goal_g ?? 130, consumed: 0, color: "#3B82F6", unit: "g" },
     { label: "Grasas",        goal: profile?.fat_goal_g     ?? 52,  consumed: 0, color: "#EC4899", unit: "g" },
   ];
 
   return (
     // ── Contenedor raíz: position relative para que el modal se posicione bien
-    <div className="h-full relative overflow-hidden">
+    <div className="h-screen relative overflow-hidden">
       {/* Scroll area */}
       <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
 
@@ -138,29 +106,12 @@ export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) 
             <h2 className="text-xl font-extrabold text-slate-900">Mi perfil</h2>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarUpload} />
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center shadow-lg relative overflow-hidden group active:scale-95 transition-transform"
-              >
-                {uploadingAvatar ? (
-                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : profile?.avatar_url ? (
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center shadow-lg overflow-hidden">
+              {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-3xl font-extrabold text-white">{initial}</span>
                 )}
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera size={20} className="text-white" />
-                </div>
-              </button>
-              <div className="absolute -bottom-2 -right-2 w-7 h-7 bg-white rounded-full shadow-sm flex items-center justify-center pointer-events-none">
-                <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center">
-                  <Camera size={12} className="text-slate-600" />
-                </div>
-              </div>
             </div>
             <div>
               <h3 className="text-xl font-extrabold text-slate-900">{firstName}</h3>
@@ -351,12 +302,6 @@ export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) 
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-max max-w-[90%] bg-slate-800 text-white px-5 py-2.5 rounded-full text-xs font-bold z-[100] shadow-xl animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap">
-          {toastMsg}
-        </div>
-      )}
     </div>
   );
 }

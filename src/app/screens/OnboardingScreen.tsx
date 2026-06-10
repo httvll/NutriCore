@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Leaf, ArrowLeft, ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import type { Database } from "../../lib/database.types";
+import { calcKcal, calcMacros, GOAL_OPTIONS, ACTIVITY_OPTIONS, DIET_TYPES } from "../../lib/nutritionUtils";
 
 type Screen = "home" | "onboarding";
 
@@ -19,96 +20,6 @@ type DietGoal     = Database["public"]["Enums"]["diet_goal"];
 
 // Opciones de edad 10–100
 const AGE_OPTIONS = Array.from({ length: 91 }, (_, i) => i + 10);
-
-
-// ─── Calculo calórico (Mifflin-St Jeor) ──────────────────────────────────────
-const ACTIVITY_FACTOR: Record<ActivityLevel, number> = {
-  sedentario:  1.2,
-  ligero:      1.375,
-  moderado:    1.55,
-  activo:      1.725,
-  muy_activo:  1.9,
-};
-
-function calcKcal(
-  sex: "masculino" | "femenino" | "otro",
-  weight: number,
-  height: number,
-  age: number,
-  activity: ActivityLevel,
-  goal: DietGoal,
-): number {
-  const bmr =
-    sex === "femenino"
-      ? 10 * weight + 6.25 * height - 5 * age - 161
-      : 10 * weight + 6.25 * height - 5 * age + 5;
-  const tdee = bmr * (ACTIVITY_FACTOR[activity] ?? 1.375);
-  if (goal === "bajar_peso")    return Math.round(tdee - 300);
-  if (goal === "ganar_musculo") return Math.round(tdee + 300);
-  return Math.round(tdee);
-}
-
-function calcMacros(kcal: number, weight: number, goal: DietGoal, dietType?: string | null) {
-  if (dietType?.toLowerCase().includes("cetogénica")) {
-    return {
-      protein: Math.round((kcal * 0.20) / 4),
-      carbs: Math.min(50, Math.round((kcal * 0.10) / 4)),
-      fat: Math.round((kcal * 0.70) / 9),
-    };
-  }
-
-  let protein = 0;
-  let carbs = 0;
-  let fat = 0;
-
-  switch (goal) {
-    case "bajar_peso":
-      protein = Math.round(weight * 2);
-      carbs = Math.round((kcal * 0.40) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-    case "ganar_musculo":
-      protein = Math.round(weight * 2);
-      carbs = Math.round((kcal * 0.50) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-    case "mejorar_salud":
-      protein = Math.round(weight * 1.5);
-      carbs = Math.round((kcal * 0.45) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-    case "mantener":
-    default:
-      protein = Math.round(weight * 1.5);
-      carbs = Math.round((kcal * 0.50) / 4);
-      fat = Math.round((kcal - (protein * 4) - (carbs * 4)) / 9);
-      break;
-  }
-
-  if (fat < 0) fat = 0;
-  return { protein, carbs, fat };
-}
-
-// ─── Mapeo UI → enum Supabase ─────────────────────────────────────────────────
-const GOAL_OPTIONS: { id: DietGoal; icon: string; label: string }[] = [
-  { id: "bajar_peso",      icon: "📉", label: "Bajar de peso"  },
-  { id: "mantener",        icon: "⚖️", label: "Mantener peso"  },
-  { id: "ganar_musculo",   icon: "💪", label: "Ganar músculo"  },
-  { id: "mejorar_salud",   icon: "❤️", label: "Mejorar salud" },
-];
-
-const ACTIVITY_OPTIONS: { id: ActivityLevel; label: string }[] = [
-  { id: "sedentario", label: "Sedentario"              },
-  { id: "ligero",     label: "Ligero (1-3 días/sem)"   },
-  { id: "moderado",   label: "Moderado (4-5 días/sem)" },
-  { id: "activo",     label: "Activo (6-7 días/sem)"   },
-  { id: "muy_activo", label: "Muy activo (diario)"     },
-];
-
-const DIET_TYPES = [
-  "Omnívoro", "Vegetariano", "Vegano",
-  "Sin gluten", "Sin lactosa", "Cetogénica", "Mediterránea", "Paleo",
-];
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 export default function OnboardingScreen({ onNavigate }: Props) {
@@ -165,7 +76,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
       .filter(Boolean);
 
     const kcal = goal && activity && sex
-      ? calcKcal(sex, weightKg, heightCm, age, activity as ActivityLevel, goal as DietGoal)
+      ? calcKcal(sex, weightKg, heightCm, age, activity, goal)
       : null;
 
     const macros = kcal ? calcMacros(kcal, weightKg, goal as DietGoal, dietType.join(", ")) : null;
@@ -189,6 +100,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
 
     setSaving(false);
     if (error) { setError(error.message); return; }
+    await new Promise(resolve => setTimeout(resolve, 300));   // Esperamos un tick para que el contexto procese el perfil actualizado
     onNavigate("home");
   }
 
@@ -281,7 +193,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
       subtitle: "Crearemos un plan adaptado a ti",
       content: (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3"> 
             {GOAL_OPTIONS.map(g => (
               <button
                 key={g.id}
@@ -292,7 +204,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
                     : "border-slate-200 bg-white"
                 }`}
               >
-                <div className="text-3xl mb-2">{g.icon}</div>
+                <div className="text-3xl mb-2">{g.icon ?? '🎯'}</div>
                 <div className={`text-xs font-bold ${goal === g.id ? "text-emerald-700" : "text-slate-700"}`}>
                   {g.label}
                 </div>
@@ -401,7 +313,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
       subtitle: "Tu plan nutricional está siendo creado",
       content: (() => {
         const kcal = (goal && activity && sex && weightKg && heightCm && age)
-          ? calcKcal(sex, weightKg, heightCm, age, activity as ActivityLevel, goal as DietGoal)
+          ? calcKcal(sex, weightKg, heightCm, age, activity, goal)
           : 1800;
         const { protein, carbs, fat } = calcMacros(kcal, weightKg || 65, (goal || "mantener") as DietGoal, dietType.join(", "));
         return (

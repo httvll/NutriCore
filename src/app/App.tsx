@@ -4,7 +4,7 @@ import { Screen, Recipe } from "../types";
 import BottomNav from "./components/BottomNav";
 import SplashScreen from "./screens/SplashScreen";
 import AuthScreen from "./screens/AuthScreen";
-import OnboardingScreen from "./screens/OnboardingScreens";
+import OnboardingScreen from "./screens/OnboardingScreen";
 import HomeScreen from "./screens/HomeScreen";
 import PlannerScreen from "./screens/PlannerScreen";
 import RecipesScreen from "./screens/RecipesScreen";
@@ -14,9 +14,10 @@ import ProfileScreen from "./screens/ProfileScreen";
 import HealthScreen from "./screens/HealthScreen";
 import StatsScreen from "./screens/StatsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
-import EditProfileScreen from "./screens/EditProfileScreen";
-import MyObjetivesScreen from "./screens/ObjetiveScreen";
+import EditProfileScreen from "./screens/EditProfileScreen"; 
+import NutritionalProfileScreen from "./screens/NutritionalProfileScreen"; 
 import AboutScreen from "./screens/AboutScreen";
+import SecurityScreen from "./screens/SecurityScreen";
 import { useAuth } from "../context/AuthContext";
 
 function MainApp({ screen, onNavigate, selectedRecipe }: {
@@ -80,7 +81,8 @@ function AppContent() {
         <Route path="/stats" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <StatsScreen onNavigate={handleNavigate} />)} />
         <Route path="/settings" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <SettingsScreen onNavigate={handleNavigate} />)} />
         <Route path="/editProfile" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <EditProfileScreen onNavigate={handleNavigate} />)} />
-        <Route path="/myObjetives" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <MyObjetivesScreen onNavigate={handleNavigate} />)} />
+        <Route path="/nutritionalProfile" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <NutritionalProfileScreen onNavigate={handleNavigate} />)} />
+        <Route path="/security" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <SecurityScreen onNavigate={handleNavigate} />)} />
         <Route path="/about" element={!user ? <Navigate to="/splash" replace /> : (!hasCompletedOnboarding ? <Navigate to="/onboarding" replace /> : <AboutScreen onNavigate={handleNavigate} />)} />
         <Route path="*" element={<Navigate to={user ? defaultLoggedInRoute : "/splash"} replace />} />
       </Routes>

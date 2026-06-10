@@ -86,41 +86,64 @@ export function useWeeklyPlan(selectedDate: string, weekDays: { fullDate: string
         if (existing && existing.length > 0) continue; 
 
         let bestCombo = null;
-        let minDiff = Infinity;
+        let minPenalty = Infinity; // Cambiamos minDiff por minPenalty
 
-        // Probar 150 combinaciones aleatorias para acercarse al calGoal
-        for (let i = 0; i < 150; i++) {
+        // Definir metas de macros ideales basadas en el perfil (o porcentajes genéricos saludables)
+        // 1g Proteína = 4 kcal | 1g Carbo = 4 kcal | 1g Grasa = 9 kcal
+        // En useWeeklyPlan.ts, dentro de la función generatePlan
+        const targetProteinG = profile.protein_goal_g || (calGoal * 0.25) / 4; 
+        const targetFatG = profile.fat_goal_g || (calGoal * 0.25) / 9;     
+        const targetCarbsG = profile.carbs_goal_g || (calGoal * 0.50) / 4;
+
+        // Aumentamos las iteraciones a 300 para buscar mejores combinaciones de macros
+        for (let i = 0; i < 300; i++) {
           const b = breakfasts[Math.floor(Math.random() * breakfasts.length)];
           const l = lunches[Math.floor(Math.random() * lunches.length)];
           const d = dinners[Math.floor(Math.random() * dinners.length)];
           
-          let currentKcal = b.calories + l.calories + d.calories;
+          let currentCombo = [b, l, d];
+          let currentKcal = currentCombo.reduce((sum, meal) => sum + meal.calories, 0);
+          let currentPro = currentCombo.reduce((sum, meal) => sum + ((meal.macros as any)?.protein || 0), 0);
+          let currentFat = currentCombo.reduce((sum, meal) => sum + ((meal.macros as any)?.fat || 0), 0);
+          let currentCarb = currentCombo.reduce((sum, meal) => sum + ((meal.macros as any)?.carbs || 0), 0);
+          
           let selectedSnacks: typeof snacks = [];
           
-          // Agregar snacks inteligentemente si nos faltan calorías para la meta
           if (snacks.length > 0) {
             let deficit = calGoal - currentKcal;
             
-            // Si faltan más de 100 kcal, agregamos un snack para complementar
-            if (deficit > 100) {
-              const s1 = snacks[Math.floor(Math.random() * snacks.length)];
-              selectedSnacks.push(s1);
-              currentKcal += s1.calories;
-              deficit -= s1.calories;
-            }
-            
-            // Si AÚN nos faltan más de 100 kcal, agregamos un segundo snack
-            if (deficit > 100) {
-              const s2 = snacks[Math.floor(Math.random() * snacks.length)];
-              selectedSnacks.push(s2);
-              currentKcal += s2.calories;
+            // Intento de agregar hasta 2 snacks si hay déficit calórico
+            for (let j = 0; j < 2; j++) {
+              if (deficit > 100) {
+                 const s = snacks[Math.floor(Math.random() * snacks.length)];
+                 selectedSnacks.push(s);
+                 currentKcal += s.calories;
+                 currentPro += (s.macros as any)?.protein || 0;
+                 currentFat += (s.macros as any)?.fat || 0;
+                 currentCarb += (s.macros as any)?.carbs || 0;
+                 deficit -= s.calories;
+              }
             }
           }
           
-          const diff = Math.abs(currentKcal - calGoal);
+          // --- FUNCIÓN DE PÉRDIDA (PENALIZACIÓN ASIMÉTRICA) ---
+          const diffKcal = Math.abs(currentKcal - calGoal);
+          const diffPro = Math.abs(currentPro - targetProteinG);
+          const diffCarb = Math.abs(currentCarb - targetCarbsG);
 
-          if (diff < minDiff) {
-            minDiff = diff;
+          // Separamos el cálculo de las grasas
+          const fatExcess = Math.max(0, currentFat - targetFatG); // Cuánto se pasó
+          const fatDeficit = Math.max(0, targetFatG - currentFat); // Cuánto le faltó
+
+          // Castigamos brutalmente el EXCESO de grasa (x25), 
+          // pero somos amables con el déficit (x9)
+          const fatPenalty = (fatExcess * 25) + (fatDeficit * 9);
+
+          // Calculamos la penalización total
+          const penalty = (diffKcal * 1) + (diffPro * 4) + fatPenalty + (diffCarb * 2);
+
+          if (penalty < minPenalty) {
+            minPenalty = penalty;
             bestCombo = { b, l, d, snacks: selectedSnacks };
           }
         }

@@ -60,6 +60,7 @@ export interface Database {
 // ─── Tipos de fila ────────────────────────────────────────────────────────────
 
 export interface UserProfile {
+  liked_foods: any;
   id: string;               // UUID — igual al auth.users.id de Supabase
   full_name: string;
   age: number | null;

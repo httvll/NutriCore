@@ -1,6 +1,6 @@
 // src/app/screens/AuthScreen.tsx
 import { useState } from "react";
-import { Leaf } from "lucide-react";
+import { Leaf, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
@@ -18,6 +18,9 @@ export default function AuthScreen({ onNavigate }: Props) {
   const [mode, setMode]       = useState<"login" | "register">("login");
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
@@ -28,8 +31,13 @@ export default function AuthScreen({ onNavigate }: Props) {
     const cleanEmail = email.trim();
 
     // 2. Validamos los campos
-    if (!cleanEmail || !password.trim()) {
+    if (!cleanEmail || !password.trim() || (mode === "register" && !confirmPassword.trim())) {
       setError("Por favor completa todos los campos.");
+      return;
+    }
+
+    if (mode === "register" && password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -117,14 +125,47 @@ export default function AuthScreen({ onNavigate }: Props) {
           <label className="text-xs font-bold text-slate-600 mb-1 block uppercase tracking-wide">
             Contraseña
           </label>
+        <div className="relative">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm bg-slate-50 focus:outline-none focus:border-emerald-400 transition-colors"
+            className="w-full px-4 py-3 pr-11 rounded-2xl border border-slate-200 text-sm bg-slate-50 focus:outline-none focus:border-emerald-400 transition-colors"
           />
+          <button 
+            type="button" 
+            onClick={() => setShowPassword(!showPassword)} 
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
         </div>
+        </div>
+
+      {mode === "register" && (
+        <div>
+          <label className="text-xs font-bold text-slate-600 mb-1 block uppercase tracking-wide">
+            Confirmar Contraseña
+          </label>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-3 pr-11 rounded-2xl border border-slate-200 text-sm bg-slate-50 focus:outline-none focus:border-emerald-400 transition-colors"
+            />
+            <button 
+              type="button" 
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+      )}
 
         {mode === "login" && (
           <button className="text-emerald-600 text-sm font-semibold text-left">
