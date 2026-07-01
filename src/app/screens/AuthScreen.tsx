@@ -167,11 +167,11 @@ export default function AuthScreen({ onNavigate }: Props) {
         </div>
       )}
 
-        {mode === "login" && (
+        {/*{mode === "login" && (
           <button className="text-emerald-600 text-sm font-semibold text-left">
             ¿Olvidaste tu contraseña?
           </button>
-        )}
+        )} */}
 
         {/* Error */}
         {error && (
@@ -190,15 +190,15 @@ export default function AuthScreen({ onNavigate }: Props) {
             : mode === "login" ? "Iniciar sesión" : "Crear cuenta gratis"}
         </button>
 
-        <div className="flex items-center gap-3 my-1">
-          <div className="flex-1 h-px bg-slate-200" />
+        {/*<div className="flex items-center gap-3 my-1"> 
+          <div className="flex-1 h-px bg-slate-200" /> 
           <span className="text-xs text-slate-400 font-medium">o continúa con</span>
           <div className="flex-1 h-px bg-slate-200" />
-        </div>
+        </div> */} 
 
-        <button className="w-full border border-slate-200 py-3.5 rounded-2xl text-sm font-bold text-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
+        {/*<button className="w-full border border-slate-200 py-3.5 rounded-2xl text-sm font-bold text-slate-700 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
           <span className="text-base font-black text-blue-500">G</span> Continuar con Google
-        </button>
+        </button> */}
       </div>
 
       <div className="h-6" />

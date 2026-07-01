@@ -95,7 +95,7 @@ export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) 
 
   return (
     // ── Contenedor raíz: position relative para que el modal se posicione bien
-    <div className="h-screen relative overflow-hidden">
+    <div className="h-screen relative">
       {/* Scroll area */}
       <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
 
@@ -237,10 +237,11 @@ export default function ProfileScreen({ onNavigate }: { onNavigate: (s: Screen) 
 
           <button
             onClick={handleSignOut}
-            className="w-full py-3.5 rounded-2xl border-2 border-red-200 text-red-600 font-bold text-sm active:scale-95 transition-transform">
+            className="w-full py-3.5 rounded-2xl border-2 border-red-200 text-red-600 font-bold text-sm active:scale-95 hover:bg-red-50 hover:-translate-y-0.5 transition-all duration-200">
             Cerrar sesión
           </button>
-          <div className="h-4" />
+          {/* Espaciador inferior para que el botón no quede pegado al borde */}
+          <div className="h-24" />
         </div>
       </div>
 

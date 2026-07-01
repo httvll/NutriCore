@@ -3,6 +3,13 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import type { MealLog } from "../../lib/database.types";
 
+const SLOT_INFO: Record<string, { time: string }> = {
+  desayuno: { time: "08:00" },
+  almuerzo: { time: "13:30" },
+  snack:    { time: "16:30" },
+  cena:     { time: "20:00" },
+};
+
 export function useWeeklyPlan(selectedDate: string, weekDays: { fullDate: string }[]) {
   const { user, profile } = useAuth();
   const [dayMeals, setDayMeals] = useState<MealLog[]>([]);
@@ -15,9 +22,14 @@ export function useWeeklyPlan(selectedDate: string, weekDays: { fullDate: string
       .select("*")
       .eq("user_id", user.id)
       .eq("logged_date", selectedDate)
-      .order("logged_at", { ascending: true });
+      // El orden por defecto de la DB puede no ser el cronológico correcto.
+      // Lo ordenaremos en el cliente usando la hora de SLOT_INFO.
+      .order("meal_slot", { ascending: true });
     
-    if (!error && data) setDayMeals(data);
+    if (!error && data) {
+      const sortedMeals = data.sort((a, b) => (SLOT_INFO[a.meal_slot]?.time || "99:99").localeCompare(SLOT_INFO[b.meal_slot]?.time || "99:99"));
+      setDayMeals(sortedMeals);
+    }
   }, [user, selectedDate]);
 
   useEffect(() => {
@@ -49,6 +61,7 @@ export function useWeeklyPlan(selectedDate: string, weekDays: { fullDate: string
 
       const exclusions = [...userAllergies, ...userDislikes];
 
+      // 1. Filtrado estricto por alergias y alimentos no deseados.
       let filteredRecipes = recipes.filter(r => {
         const hasExclusion = exclusions.some(exclusion => 
           r.ingredients?.some((ing: string) => ing.toLowerCase().includes(exclusion)) || 
@@ -56,20 +69,15 @@ export function useWeeklyPlan(selectedDate: string, weekDays: { fullDate: string
         );
         return !hasExclusion;
       });
-
+      
+      // 2. Filtrado estricto por tipo de dieta (vegano, vegetariano, etc.).
+      // Esto es un filtro OBLIGATORIO, no opcional.
       if (userDiets.length > 0 && !userDiets.includes("omnívoro")) {
-        const dietFiltered = filteredRecipes.filter(r => {
+        filteredRecipes = filteredRecipes.filter(r => {
           const tags = r.tags ? r.tags.map((t: string) => t.toLowerCase()) : [];
-          return userDiets.every(diet => tags.includes(diet) || r.name.toLowerCase().includes(diet));
+          // La receta DEBE tener TODAS las etiquetas de la dieta del usuario.
+          return userDiets.every(diet => tags.includes(diet));
         });
-
-        const bCount = dietFiltered.filter(r => r.category.toLowerCase().includes("desayuno")).length;
-        const lCount = dietFiltered.filter(r => r.category.toLowerCase().includes("almuerzo")).length;
-        const dCount = dietFiltered.filter(r => r.category.toLowerCase().includes("cena")).length;
-
-        if (bCount > 0 && lCount > 0 && dCount > 0) {
-          filteredRecipes = dietFiltered;
-        }
       }
 
       const breakfasts = filteredRecipes.filter(r => r.category.toLowerCase().includes("desayuno"));
@@ -78,7 +86,7 @@ export function useWeeklyPlan(selectedDate: string, weekDays: { fullDate: string
       const snacks = filteredRecipes.filter(r => r.category.toLowerCase().includes("snack"));
 
       if (!breakfasts.length || !lunches.length || !dinners.length) {
-        throw new Error("No hay suficientes recetas en cada categoría para generar un plan.");
+        throw new Error("No hay suficientes recetas compatibles con tu dieta y preferencias para generar un plan completo.");
       }
 
       for (const day of weekDays) {

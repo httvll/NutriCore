@@ -119,7 +119,7 @@ export default function OnboardingScreen({ onNavigate }: Props) {
             <input
               value={fullName}
               onChange={e => setFullName(e.target.value)}
-              placeholder="Valentina García"
+              placeholder="Nombre Apellido"
               className="w-full px-4 py-3.5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 text-slate-900 font-semibold focus:outline-none focus:border-emerald-500 transition-colors"
             />
           </div>

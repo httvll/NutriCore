@@ -56,9 +56,14 @@ export default function HomeScreen({ onNavigate }: { onNavigate: (s: Screen) => 
         .select("*")
         .eq("user_id", user.id)
         .eq("logged_date", localDate)
-        .order("logged_at", { ascending: true });
+        // El orden por defecto de la DB puede no ser el cronológico correcto.
+        // Lo ordenaremos en el cliente usando la hora de SLOT_INFO.
+        .order("meal_slot", { ascending: true });
       
-      if (!error && data) setMeals(data);
+      if (!error && data) {
+        const sortedMeals = data.sort((a, b) => (SLOT_INFO[a.meal_slot]?.time || "99:99").localeCompare(SLOT_INFO[b.meal_slot]?.time || "99:99"));
+        setMeals(sortedMeals);
+      }
     };
     loadMeals();
   }, [user]);

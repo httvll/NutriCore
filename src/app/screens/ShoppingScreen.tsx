@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, ShoppingBag } from "lucide-react";
+import { Check, ShoppingBag, ChevronDown } from "lucide-react";
 import { Screen } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -26,14 +26,22 @@ function categorizeIngredient(ing: string): string {
 function parseIngredient(raw: string) {
   // Separa inteligentemente la cantidad (ej. "150g", "1/2 taza", "2 cdas") del nombre del ingrediente
   const match = raw.match(/^([\d½¼¾/.,]+\s*(?:g|kg|ml|l|taza|tazas|cda|cdas|cdita|lata|latas|uds\.?|pieza|piezas|dientes)?)\s+(.*)$/i);
-  if (match) return { qty: match[1].trim(), name: match[2].trim() };
-  return { qty: "-", name: raw };
+  let name, qty;
+  if (match) {
+    qty = match[1].trim();
+    name = match[2].trim();
+  } else {
+    qty = "-";
+    name = raw;
+  }
+  return { qty, name: name.charAt(0).toUpperCase() + name.slice(1) };
 }
 
 export default function ShoppingScreen({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const { user } = useAuth();
   const [list, setList] = useState<ShoppingCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     const loadShoppingList = async () => {
@@ -113,6 +121,12 @@ export default function ShoppingScreen({ onNavigate }: { onNavigate: (s: Screen)
     prev.map((c, cIdx) => cIdx !== ci ? c : { ...c, items: c.items.map((it, iIdx) => iIdx !== ii ? it : { ...it, checked: !it.checked }) })
   );
 
+  const toggleCategory = (categoryName: string) => {
+    setExpandedCategories(prev =>
+      prev.includes(categoryName) ? prev.filter(cn => cn !== categoryName) : [...prev, categoryName]
+    );
+  };
+
   return (
     <div className="h-full overflow-y-auto bg-slate-50" style={{ scrollbarWidth: "none" }}>
       <div className="bg-white pt-2 pb-5 shadow-sm">
@@ -154,24 +168,30 @@ export default function ShoppingScreen({ onNavigate }: { onNavigate: (s: Screen)
       ) : (
         <div className="px-5 pt-4 space-y-4">
           {list.map((cat, ci) => (
-            <div key={cat.category} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
-                <span className="text-xl">{cat.icon}</span>
-                <h3 className="text-sm font-extrabold text-slate-900">{cat.category}</h3>
-                <div className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ background: cat.color }}>
-                  {cat.items.filter(i => i.checked).length}/{cat.items.length}
+            <div key={cat.category} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <button onClick={() => toggleCategory(cat.category)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
+                <span className="text-xl shrink-0">{cat.icon}</span>
+                <div className="flex-1">
+                  <h3 className="text-sm font-extrabold text-slate-900">{cat.category}</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">{cat.items.length} productos</p>
                 </div>
-              </div>
-              <div className="divide-y divide-slate-50">
-                {cat.items.map((item, ii) => (
-                  <button key={ii} onClick={() => toggle(ci, ii)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${item.checked ? "border-emerald-500 bg-emerald-500" : "border-slate-300"}`}>
-                      {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
-                    </div>
-                    <span className={`flex-1 text-sm text-left font-semibold ${item.checked ? "line-through text-slate-400" : "text-slate-800"}`}>{item.name}</span>
-                    <span className="text-xs text-slate-400 font-semibold">{item.qty}</span>
-                  </button>
-                ))}
+                <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${expandedCategories.includes(cat.category) ? 'rotate-180' : ''}`} />
+              </button>
+
+              <div className={`grid transition-all duration-300 ease-in-out ${expandedCategories.includes(cat.category) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                <div className="overflow-hidden">
+                  <div className="divide-y divide-slate-50 border-t border-slate-100">
+                    {cat.items.map((item, ii) => (
+                      <button key={ii} onClick={() => toggle(ci, ii)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${item.checked ? "border-emerald-500 bg-emerald-500" : "border-slate-300"}`}>
+                          {item.checked && <Check size={11} className="text-white" strokeWidth={3} />}
+                        </div>
+                        <span className={`flex-1 text-sm text-left font-semibold ${item.checked ? "line-through text-slate-400" : "text-slate-800"}`}>{item.name}</span>
+                        <span className="text-xs text-slate-400 font-semibold">{item.qty}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
